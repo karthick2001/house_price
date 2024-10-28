@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.7  # Specify the Python version if needed
+    commands:
+      - echo "No installation required for this simple build."
+      
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR Public..."
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/u4i0c1o5
+
+  build:
+    commands:
+      - echo "Building the Docker image..."
+      - docker build -t flask-app .
+
+  post_build:
+    commands:
+      - echo "Tagging and pushing the Docker image to ECR Public..."
+      - docker tag flask-app:latest public.ecr.aws/u4i0c1o5/flask-app:latest
+      - docker push public.ecr.aws/u4i0c1o5/flask-app:latest
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: .
