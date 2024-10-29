@@ -3,29 +3,35 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.7  # Specify the Python version if needed
+      python: 3.7  # Adjust based on your Python version
+    
     commands:
-      - echo "No installation required for this simple build."
-      
+      - echo "Installing dependencies..."
+      - pip install -r requirements.txt
+
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR Public..."
-      - aws ecr-public get-login-password --region us-east-1 > password.txt
-      - docker login --username AWS --password $(cat password.txt) public.ecr.aws/u4i0c1o5
-      - rm password.txt  # Clean up the password file
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+      - echo "Build phase complete."
 
   build:
     commands:
       - echo "Building the Docker image..."
-      - docker build -t flask-app .
+      - docker build -t my-app .
+      - docker tag my-app:latest public.ecr.aws/137068254659/housing_price:latest
 
   post_build:
     commands:
-      - echo "Tagging and pushing the Docker image to ECR Public..."
-      - docker tag flask-app:latest public.ecr.aws/u4i0c1o5/flask-app:latest
-      - docker push public.ecr.aws/u4i0c1o5/flask-app:latest
+      - echo "Pushing the Docker image to ECR..."
+      - docker push public.ecr.aws/137068254659/housing_price:latest
+      - echo "Build completed and image pushed to ECR."
 
 artifacts:
   files:
-    - '**/*'
-  base-directory: .
+    - "**/*"  # Specify files to include in the build artifacts if needed
+  discard-paths: yes
+
+cache:
+  paths:
+    - '/root/.cache/pip'  # Caches pip dependencies for faster builds
